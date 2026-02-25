@@ -1,0 +1,178 @@
+@import url("https://cdn.jsdelivr.net/npm/@fontsource/monaspace-argon/index.css");
+@import url("https://cdn.jsdelivr.net/npm/@fontsource/monaspace-neon/index.css");
+@import url("https://cdn.jsdelivr.net/npm/@fontsource/monaspace-xenon/index.css");
+@import url("https://cdn.jsdelivr.net/npm/@fontsource/monaspace-radon/index.css");
+@import url("https://cdn.jsdelivr.net/npm/@fontsource/monaspace-krypton/index.css");
+
+@font-face {
+  font-family: 'VT323';
+  src: url('/Fonts/VT323-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@import 'tailwindcss';
+
+@plugin "tailwindcss-animate";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --background: #05080d;
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.16 0.006 285.885);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.145 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: #3793FF;
+  --primary-foreground: #ffffff;
+  --secondary: #C4B4FF;
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.25 0.006 285.885);
+  --muted-foreground: oklch(0.7 0.01 285.885);
+  --accent: #3793FF;
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.4 0.15 25);
+  --destructive-foreground: oklch(0.985 0 0);
+  --border: rgba(255, 255, 255, 0.1);
+  --input: oklch(0.25 0.006 285.885);
+  --ring: #3793FF;
+  --radius: 1rem;
+}
+
+@theme inline {
+  --font-sans: 'Monaspace Neon', sans-serif;
+  --font-mono: 'Monaspace Krypton', monospace;
+  --font-heading: 'Monaspace Argon', sans-serif;
+  --font-pixel: 'VT323', monospace;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-border: var(--border);
+  --color-secondary: var(--secondary);
+  --color-lavender: #c0c2ce;
+  --color-pastel-pink: #ffc0cb;
+  --color-mint-green: #a8e6cf;
+  --color-soft-peach: #ffcc5c;
+  --color-dusty-blue: #536872;
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-pulse-slow: pulse-slow 4s ease-in-out infinite;
+  --animate-reveal-up: reveal-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  --animate-reveal-fade: reveal-fade 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+@keyframes pulse-slow {
+
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+
+  50% {
+    opacity: 0.6;
+  }
+}
+
+@keyframes reveal-up {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes reveal-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 5rem;
+}
+
+@layer base {
+  * {
+    @apply border-border selection:bg-primary/20;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased overflow-x-hidden;
+  }
+}
+
+/* Glassmorphism Classes - Inspired by css.glass */
+.glass {
+  background: rgba(46, 45, 45, 0.2);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.glass-dark {
+  background: rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.glass-nav {
+  background: rgba(5, 8, 13, 0.4);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-background;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-white/10 rounded-full hover:bg-white/20 transition-colors;
+}
+
+/* Typography Enhancements */
+h1,
+h2,
+h3 {
+  @apply tracking-tighter font-heading;
+}
+
+.font-pixel {
+  font-family: var(--font-pixel);
+}
+
+.text-gradient {
+  @apply bg-clip-text text-transparent bg-linear-to-b from-white via-slate-200 to-slate-400;
+}
