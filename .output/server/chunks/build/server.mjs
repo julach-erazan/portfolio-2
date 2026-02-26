@@ -1,8 +1,8 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import { Readable, PassThrough } from "node:stream";
-import require$$0$4 from "util";
+import require$$2$3 from "util";
 import require$$1$4 from "crypto";
-import require$$2 from "async_hooks";
+import require$$2$1 from "async_hooks";
 import require$$1$6 from "stream";
 import { ReadableStream as ReadableStream$1 } from "node:stream/web";
 function _mergeNamespaces$1(n2, m2) {
@@ -24,6 +24,7 @@ function _mergeNamespaces$1(n2, m2) {
   }
   return Object.freeze(Object.defineProperty(n2, Symbol.toStringTag, { value: "Module" }));
 }
+var commonjsGlobal = typeof globalThis !== "undefined" ? globalThis : typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : {};
 function getDefaultExportFromCjs(x3) {
   return x3 && x3.__esModule && Object.prototype.hasOwnProperty.call(x3, "default") ? x3["default"] : x3;
 }
@@ -719,7 +720,7 @@ function parseSegments(defaultCaseSensitive, data, route, start, node, depth, on
           const prefix2 = !prefix_raw ? void 0 : actuallyCaseSensitive ? prefix_raw : prefix_raw.toLowerCase();
           const suffix = !suffix_raw ? void 0 : actuallyCaseSensitive ? suffix_raw : suffix_raw.toLowerCase();
           const existingNode = !skipOnParamError && node.dynamic?.find(
-            (s) => !s.skipOnParamError && s.caseSensitive === actuallyCaseSensitive && s.prefix === prefix2 && s.suffix === suffix
+            (s2) => !s2.skipOnParamError && s2.caseSensitive === actuallyCaseSensitive && s2.prefix === prefix2 && s2.suffix === suffix
           );
           if (existingNode) {
             nextNode = existingNode;
@@ -746,7 +747,7 @@ function parseSegments(defaultCaseSensitive, data, route, start, node, depth, on
           const prefix2 = !prefix_raw ? void 0 : actuallyCaseSensitive ? prefix_raw : prefix_raw.toLowerCase();
           const suffix = !suffix_raw ? void 0 : actuallyCaseSensitive ? suffix_raw : suffix_raw.toLowerCase();
           const existingNode = !skipOnParamError && node.optional?.find(
-            (s) => !s.skipOnParamError && s.caseSensitive === actuallyCaseSensitive && s.prefix === prefix2 && s.suffix === suffix
+            (s2) => !s2.skipOnParamError && s2.caseSensitive === actuallyCaseSensitive && s2.prefix === prefix2 && s2.suffix === suffix
           );
           if (existingNode) {
             nextNode = existingNode;
@@ -2578,6 +2579,10 @@ function getLocationChangeInfo(routerState) {
   const hashChanged = fromLocation?.hash !== toLocation.hash;
   return { fromLocation, toLocation, pathChanged, hrefChanged, hashChanged };
 }
+function filterRedirectedCachedMatches(matches) {
+  const filtered = matches.filter((d) => d.status !== "redirected");
+  return filtered.length === matches.length ? matches : filtered;
+}
 function createServerStore(initialState) {
   const store = {
     state: initialState,
@@ -2690,10 +2695,10 @@ class RouterCore {
         needsLocationUpdate = true;
       }
       if (needsLocationUpdate && this.__store) {
-        this.__store.state = {
-          ...this.state,
+        this.__store.setState((s2) => ({
+          ...s2,
           location: this.latestLocation
-        };
+        }));
       }
     };
     this.updateLatestLocation = () => {
@@ -3186,15 +3191,15 @@ class RouterCore {
         }
       }
       const pendingMatches = this.matchRoutes(this.latestLocation);
-      this.__store.setState((s) => ({
-        ...s,
+      this.__store.setState((s2) => ({
+        ...s2,
         status: "pending",
         statusCode: 200,
         isLoading: true,
         location: this.latestLocation,
         pendingMatches,
         // If a cached moved to pendingMatches, remove it from cachedMatches
-        cachedMatches: s.cachedMatches.filter(
+        cachedMatches: s2.cachedMatches.filter(
           (d) => !pendingMatches.some((e) => e.id === d.id)
         )
       }));
@@ -3239,9 +3244,9 @@ class RouterCore {
                     let enteringMatches = [];
                     let stayingMatches = [];
                     batch(() => {
-                      this.__store.setState((s) => {
-                        const previousMatches = s.matches;
-                        const newMatches = s.pendingMatches || s.matches;
+                      this.__store.setState((s2) => {
+                        const previousMatches = s2.matches;
+                        const newMatches = s2.pendingMatches || s2.matches;
                         exitingMatches = previousMatches.filter(
                           (match) => !newMatches.some((d) => d.id === match.id)
                         );
@@ -3252,7 +3257,7 @@ class RouterCore {
                           (match) => previousMatches.some((d) => d.id === match.id)
                         );
                         return {
-                          ...s,
+                          ...s2,
                           isLoading: false,
                           loadedAt: Date.now(),
                           matches: newMatches,
@@ -3264,9 +3269,9 @@ class RouterCore {
                            * or reloads re-run their loaders instead of reusing the failed/not-found data.
                            */
                           cachedMatches: [
-                            ...s.cachedMatches,
+                            ...s2.cachedMatches,
                             ...exitingMatches.filter(
-                              (d) => d.status !== "error" && d.status !== "notFound"
+                              (d) => d.status !== "error" && d.status !== "notFound" && d.status !== "redirected"
                             )
                           ]
                         };
@@ -3294,9 +3299,9 @@ class RouterCore {
             } else if (isNotFound(err)) {
               notFound = err;
             }
-            this.__store.setState((s) => ({
-              ...s,
-              statusCode: redirect2 ? redirect2.status : notFound ? 404 : s.matches.some((d) => d.status === "error") ? 500 : 200,
+            this.__store.setState((s2) => ({
+              ...s2,
+              statusCode: redirect2 ? redirect2.status : notFound ? 404 : s2.matches.some((d) => d.status === "error") ? 500 : 200,
               redirect: redirect2
             }));
           }
@@ -3320,8 +3325,8 @@ class RouterCore {
         newStatusCode = 500;
       }
       if (newStatusCode !== void 0) {
-        this.__store.setState((s) => ({
-          ...s,
+        this.__store.setState((s2) => ({
+          ...s2,
           statusCode: newStatusCode
         }));
       }
@@ -3360,12 +3365,21 @@ class RouterCore {
       this.startTransition(() => {
         const matchesKey = this.state.pendingMatches?.some((d) => d.id === id) ? "pendingMatches" : this.state.matches.some((d) => d.id === id) ? "matches" : this.state.cachedMatches.some((d) => d.id === id) ? "cachedMatches" : "";
         if (matchesKey) {
-          this.__store.setState((s) => ({
-            ...s,
-            [matchesKey]: s[matchesKey]?.map(
-              (d) => d.id === id ? updater(d) : d
-            )
-          }));
+          if (matchesKey === "cachedMatches") {
+            this.__store.setState((s2) => ({
+              ...s2,
+              cachedMatches: filterRedirectedCachedMatches(
+                s2.cachedMatches.map((d) => d.id === id ? updater(d) : d)
+              )
+            }));
+          } else {
+            this.__store.setState((s2) => ({
+              ...s2,
+              [matchesKey]: s2[matchesKey]?.map(
+                (d) => d.id === id ? updater(d) : d
+              )
+            }));
+          }
         }
       });
     };
@@ -3384,11 +3398,11 @@ class RouterCore {
         }
         return d;
       };
-      this.__store.setState((s) => ({
-        ...s,
-        matches: s.matches.map(invalidate),
-        cachedMatches: s.cachedMatches.map(invalidate),
-        pendingMatches: s.pendingMatches?.map(invalidate)
+      this.__store.setState((s2) => ({
+        ...s2,
+        matches: s2.matches.map(invalidate),
+        cachedMatches: s2.cachedMatches.map(invalidate),
+        pendingMatches: s2.pendingMatches?.map(invalidate)
       }));
       this.shouldViewTransition = false;
       return this.load({ sync: opts?.sync });
@@ -3428,18 +3442,18 @@ class RouterCore {
     this.clearCache = (opts) => {
       const filter = opts?.filter;
       if (filter !== void 0) {
-        this.__store.setState((s) => {
+        this.__store.setState((s2) => {
           return {
-            ...s,
-            cachedMatches: s.cachedMatches.filter(
+            ...s2,
+            cachedMatches: s2.cachedMatches.filter(
               (m2) => !filter(m2)
             )
           };
         });
       } else {
-        this.__store.setState((s) => {
+        this.__store.setState((s2) => {
           return {
-            ...s,
+            ...s2,
             cachedMatches: []
           };
         });
@@ -3479,9 +3493,9 @@ class RouterCore {
       batch(() => {
         matches.forEach((match) => {
           if (!loadedMatchIds.has(match.id)) {
-            this.__store.setState((s) => ({
-              ...s,
-              cachedMatches: [...s.cachedMatches, match]
+            this.__store.setState((s2) => ({
+              ...s2,
+              cachedMatches: [...s2.cachedMatches, match]
             }));
           }
         });
@@ -4012,8 +4026,8 @@ var L = ((i) => (i[i.AggregateError = 1] = "AggregateError", i[i.ArrowFunction =
 var v = Symbol.asyncIterator, mr = Symbol.hasInstance, R = Symbol.isConcatSpreadable, C = Symbol.iterator, pr = Symbol.match, dr = Symbol.matchAll, gr = Symbol.replace, yr = Symbol.search, Nr = Symbol.species, br = Symbol.split, vr = Symbol.toPrimitive, P$1 = Symbol.toStringTag, Cr = Symbol.unscopables;
 var rt = { 0: "Symbol.asyncIterator", 1: "Symbol.hasInstance", 2: "Symbol.isConcatSpreadable", 3: "Symbol.iterator", 4: "Symbol.match", 5: "Symbol.matchAll", 6: "Symbol.replace", 7: "Symbol.search", 8: "Symbol.species", 9: "Symbol.split", 10: "Symbol.toPrimitive", 11: "Symbol.toStringTag", 12: "Symbol.unscopables" }, ve = { [v]: 0, [mr]: 1, [R]: 2, [C]: 3, [pr]: 4, [dr]: 5, [gr]: 6, [yr]: 7, [Nr]: 8, [br]: 9, [vr]: 10, [P$1]: 11, [Cr]: 12 }, tt = { 0: v, 1: mr, 2: R, 3: C, 4: pr, 5: dr, 6: gr, 7: yr, 8: Nr, 9: br, 10: vr, 11: P$1, 12: Cr }, nt = { 2: "!0", 3: "!1", 1: "void 0", 0: "null", 4: "-0", 5: "1/0", 6: "-1/0", 7: "0/0" }, o = void 0, ot = { 2: true, 3: false, 1: o, 0: null, 4: -0, 5: Number.POSITIVE_INFINITY, 6: Number.NEGATIVE_INFINITY, 7: Number.NaN };
 var Ce = { 0: "Error", 1: "EvalError", 2: "RangeError", 3: "ReferenceError", 4: "SyntaxError", 5: "TypeError", 6: "URIError" }, at = { 0: Error, 1: EvalError, 2: RangeError, 3: ReferenceError, 4: SyntaxError, 5: TypeError, 6: URIError };
-function c(e, r, t, n2, a, s, i, u, l, g, S, d) {
-  return { t: e, i: r, s: t, c: n2, m: a, p: s, e: i, a: u, f: l, b: g, o: S, l: d };
+function c(e, r, t, n2, a, s2, i, u, l, g, S, d) {
+  return { t: e, i: r, s: t, c: n2, m: a, p: s2, e: i, a: u, f: l, b: g, o: S, l: d };
 }
 function F(e) {
   return c(2, o, e, o, o, o, o, o, o, o, o, o);
@@ -4048,7 +4062,7 @@ function fn(e) {
 }
 function y(e) {
   let r = "", t = 0, n2;
-  for (let a = 0, s = e.length; a < s; a++) n2 = fn(e[a]), n2 && (r += e.slice(t, a) + n2, t = a + 1);
+  for (let a = 0, s2 = e.length; a < s2; a++) n2 = fn(e[a]), n2 && (r += e.slice(t, a) + n2, t = a + 1);
   return t === 0 ? r = e : r += e.slice(t), r;
 }
 function Sn(e) {
@@ -4110,7 +4124,7 @@ function gn(e) {
 }
 function $(e, r) {
   let t = gn(e), n2 = Object.getOwnPropertyNames(e);
-  for (let a = 0, s = n2.length, i; a < s; a++) i = n2[a], i !== "name" && i !== "message" && (i === "stack" ? r & 4 && (t = t || {}, t[i] = e[i]) : (t = t || {}, t[i] = e[i]));
+  for (let a = 0, s2 = n2.length, i; a < s2; a++) i = n2[a], i !== "name" && i !== "message" && (i === "stack" ? r & 4 && (t = t || {}, t[i] = e[i]) : (t = t || {}, t[i] = e[i]));
   return t;
 }
 function Oe(e) {
@@ -4271,7 +4285,7 @@ var re = () => {
 }, Cn = (e, r) => {
   e.f(r), e.p.s = 2, e.p.v = r;
 }, yt = re.toString(), Nt = vn.toString(), bt = Cn.toString(), Rr = () => {
-  let e = [], r = [], t = true, n2 = false, a = 0, s = (l, g, S) => {
+  let e = [], r = [], t = true, n2 = false, a = 0, s2 = (l, g, S) => {
     for (S = 0; S < a; S++) r[S] && r[S][g](l);
   }, i = (l, g, S, d) => {
     for (g = 0, S = e.length; g < S; g++) d = e[g], !t && g === S - 1 ? l[n2 ? "return" : "throw"](d) : l.next(d);
@@ -4279,22 +4293,22 @@ var re = () => {
     t && (r[g] = r[a], r[a--] = void 0);
   });
   return { __SEROVAL_STREAM__: true, on: (l) => u(l), next: (l) => {
-    t && (e.push(l), s(l, "next"));
+    t && (e.push(l), s2(l, "next"));
   }, throw: (l) => {
-    t && (e.push(l), s(l, "throw"), t = false, n2 = false, r.length = 0);
+    t && (e.push(l), s2(l, "throw"), t = false, n2 = false, r.length = 0);
   }, return: (l) => {
-    t && (e.push(l), s(l, "return"), t = false, n2 = true, r.length = 0);
+    t && (e.push(l), s2(l, "return"), t = false, n2 = true, r.length = 0);
   } };
 }, vt = Rr.toString(), Pr = (e) => (r) => () => {
   let t = 0, n2 = { [e]: () => n2, next: () => {
     if (t > r.d) return { done: true, value: void 0 };
-    let a = t++, s = r.v[a];
-    if (a === r.t) throw s;
-    return { done: a === r.d, value: s };
+    let a = t++, s2 = r.v[a];
+    if (a === r.t) throw s2;
+    return { done: a === r.d, value: s2 };
   } };
   return n2;
 }, Ct = Pr.toString(), xr = (e, r) => (t) => () => {
-  let n2 = 0, a = -1, s = false, i = [], u = [], l = (S = 0, d = u.length) => {
+  let n2 = 0, a = -1, s2 = false, i = [], u = [], l = (S = 0, d = u.length) => {
     for (; S < d; S++) u[S].s({ done: true, value: void 0 });
   };
   t.on({ next: (S) => {
@@ -4302,7 +4316,7 @@ var re = () => {
     d && d.s({ done: false, value: S }), i.push(S);
   }, throw: (S) => {
     let d = u.shift();
-    d && d.f(S), l(), a = i.length, s = true, i.push(S);
+    d && d.f(S), l(), a = i.length, s2 = true, i.push(S);
   }, return: (S) => {
     let d = u.shift();
     d && d.s({ done: true, value: S }), l(), a = i.length, i.push(S);
@@ -4319,7 +4333,7 @@ var re = () => {
     if (n2 > a) return { done: true, value: void 0 };
     let S = n2++, d = i[S];
     if (S !== a) return { done: false, value: d };
-    if (s) throw d;
+    if (s2) throw d;
     return { done: true, value: d };
   } };
   return g;
@@ -4337,13 +4351,13 @@ function Tr(e, r, t) {
 function $e(e) {
   let r = [], t = -1, n2 = -1, a = e[C]();
   for (; ; ) try {
-    let s = a.next();
-    if (r.push(s.value), s.done) {
+    let s2 = a.next();
+    if (r.push(s2.value), s2.done) {
       n2 = r.length - 1;
       break;
     }
-  } catch (s) {
-    t = r.length, r.push(s);
+  } catch (s2) {
+    t = r.length, r.push(s2);
   }
   return Tr(r, t, n2);
 }
@@ -4430,7 +4444,7 @@ function ht(e, r, t) {
 }
 function or(e, r, t) {
   let n2 = new Uint8Array(t), a = "";
-  for (let s = 0, i = n2.length; s < i; s++) a += String.fromCharCode(n2[s]);
+  for (let s2 = 0, i = n2.length; s2 < i; s2++) a += String.fromCharCode(n2[s2]);
   return c(19, r, y(btoa(a)), o, o, o, o, o, k(e, 5), o, o, o);
 }
 function ne(e, r) {
@@ -4447,16 +4461,16 @@ var _r = class {
 };
 async function Rn(e, r, t) {
   let n2 = [];
-  for (let a = 0, s = t.length; a < s; a++) a in t ? n2[a] = await N(e, r, t[a]) : n2[a] = 0;
+  for (let a = 0, s2 = t.length; a < s2; a++) a in t ? n2[a] = await N(e, r, t[a]) : n2[a] = 0;
   return n2;
 }
 async function Pn(e, r, t, n2) {
   return _e(t, n2, await Rn(e, r, n2));
 }
 async function kr(e, r, t) {
-  let n2 = Object.entries(t), a = [], s = [];
-  for (let i = 0, u = n2.length; i < u; i++) a.push(y(n2[i][0])), s.push(await N(e, r, n2[i][1]));
-  return C in t && (a.push(I(e.base, C)), s.push(Ue(er(e.base), await N(e, r, $e(t))))), v in t && (a.push(I(e.base, v)), s.push(je(rr(e.base), await N(e, r, Xe(t))))), P$1 in t && (a.push(I(e.base, P$1)), s.push(X(t[P$1]))), R in t && (a.push(I(e.base, R)), s.push(t[R] ? J : Z)), { k: a, v: s };
+  let n2 = Object.entries(t), a = [], s2 = [];
+  for (let i = 0, u = n2.length; i < u; i++) a.push(y(n2[i][0])), s2.push(await N(e, r, n2[i][1]));
+  return C in t && (a.push(I(e.base, C)), s2.push(Ue(er(e.base), await N(e, r, $e(t))))), v in t && (a.push(I(e.base, v)), s2.push(je(rr(e.base), await N(e, r, Xe(t))))), P$1 in t && (a.push(I(e.base, P$1)), s2.push(X(t[P$1]))), R in t && (a.push(I(e.base, R)), s2.push(t[R] ? J : Z)), { k: a, v: s2 };
 }
 async function zr(e, r, t, n2, a) {
   return tr(t, n2, a, await kr(e, r, n2));
@@ -4482,43 +4496,43 @@ async function hn(e, r, t, n2) {
   return Me(t, n2, a ? await kr(e, r, a) : o);
 }
 async function zn(e, r, t, n2) {
-  let a = [], s = [];
-  for (let [i, u] of n2.entries()) a.push(await N(e, r, i)), s.push(await N(e, r, u));
-  return nr(e.base, t, a, s);
+  let a = [], s2 = [];
+  for (let [i, u] of n2.entries()) a.push(await N(e, r, i)), s2.push(await N(e, r, u));
+  return nr(e.base, t, a, s2);
 }
 async function _n(e, r, t, n2) {
   let a = [];
-  for (let s of n2.keys()) a.push(await N(e, r, s));
+  for (let s2 of n2.keys()) a.push(await N(e, r, s2));
   return Le(t, a);
 }
 async function _t(e, r, t, n2) {
   let a = e.base.plugins;
-  if (a) for (let s = 0, i = a.length; s < i; s++) {
-    let u = a[s];
+  if (a) for (let s2 = 0, i = a.length; s2 < i; s2++) {
+    let u = a[s2];
     if (u.parse.async && u.test(n2)) return fe(t, u.tag, await u.parse.async(n2, new _r(e, r), { id: t }));
   }
   return o;
 }
 async function kn(e, r, t, n2) {
-  let [a, s] = await wr(n2);
-  return c(12, t, a, o, o, o, o, o, await N(e, r, s), o, o, o);
+  let [a, s2] = await wr(n2);
+  return c(12, t, a, o, o, o, o, o, await N(e, r, s2), o, o, o);
 }
 function Dn(e, r, t, n2, a) {
-  let s = [], i = t.on({ next: (u) => {
+  let s2 = [], i = t.on({ next: (u) => {
     de(this.base, r), N(this, e, u).then((l) => {
-      s.push(qe(r, l));
+      s2.push(qe(r, l));
     }, (l) => {
       a(l), i();
     });
   }, throw: (u) => {
     de(this.base, r), N(this, e, u).then((l) => {
-      s.push(We(r, l)), n2(s), i();
+      s2.push(We(r, l)), n2(s2), i();
     }, (l) => {
       a(l), i();
     });
   }, return: (u) => {
     de(this.base, r), N(this, e, u).then((l) => {
-      s.push(Ge(r, l)), n2(s), i();
+      s2.push(Ge(r, l)), n2(s2), i();
     }, (l) => {
       a(l), i();
     });
@@ -4529,7 +4543,7 @@ async function Fn(e, r, t, n2) {
 }
 async function Bn(e, r, t, n2) {
   let a = [];
-  for (let s = 0, i = n2.v.length; s < i; s++) a[s] = await N(e, r, n2.v[s]);
+  for (let s2 = 0, i = n2.v.length; s2 < i; s2++) a[s2] = await N(e, r, n2.v[s2]);
   return Ke(t, a, n2.t, n2.d);
 }
 async function Vn(e, r, t, n2) {
@@ -4538,8 +4552,8 @@ async function Vn(e, r, t, n2) {
   if (Ze(n2)) return Bn(e, r, t, n2);
   let a = n2.constructor;
   if (a === Y) return N(e, r, n2.replacement);
-  let s = await _t(e, r, t, n2);
-  if (s) return s;
+  let s2 = await _t(e, r, t, n2);
+  if (s2) return s2;
   switch (a) {
     case Object:
       return zr(e, r, t, n2, false);
@@ -4728,9 +4742,9 @@ function Gn(e, r) {
   return b(e, r.i, ft(B(r.s)));
 }
 function Kn(e, r, t) {
-  let n2 = t.a, a = n2.length, s = b(e, t.i, new Array(a));
-  for (let i = 0, u; i < a; i++) u = n2[i], u && (s[i] = p$1(e, r, u));
-  return Bt(s, t.o), s;
+  let n2 = t.a, a = n2.length, s2 = b(e, t.i, new Array(a));
+  for (let i = 0, u; i < a; i++) u = n2[i], u && (s2[i] = p$1(e, r, u));
+  return Bt(s2, t.o), s2;
 }
 function Hn(e) {
   switch (e) {
@@ -4763,13 +4777,13 @@ function Ft(e, r, t) {
 function Zn(e, r, t, n2, a) {
   if (typeof n2 == "string") Ft(t, n2, p$1(e, r, a));
   else {
-    let s = p$1(e, r, n2);
-    switch (typeof s) {
+    let s2 = p$1(e, r, n2);
+    switch (typeof s2) {
       case "string":
-        Ft(t, s, p$1(e, r, a));
+        Ft(t, s2, p$1(e, r, a));
         break;
       case "symbol":
-        Jn(s) && (t[s] = p$1(e, r, a));
+        Jn(s2) && (t[s2] = p$1(e, r, a));
         break;
       default:
         throw new h(n2);
@@ -4798,12 +4812,12 @@ function Qn(e, r) {
 }
 function eo(e, r, t) {
   let n2 = b(e, t.i, /* @__PURE__ */ new Set());
-  for (let a = 0, s = t.a, i = s.length; a < i; a++) n2.add(p$1(e, r, s[a]));
+  for (let a = 0, s2 = t.a, i = s2.length; a < i; a++) n2.add(p$1(e, r, s2[a]));
   return n2;
 }
 function ro(e, r, t) {
   let n2 = b(e, t.i, /* @__PURE__ */ new Map());
-  for (let a = 0, s = t.e.k, i = t.e.v, u = s.length; a < u; a++) n2.set(p$1(e, r, s[a]), p$1(e, r, i[a]));
+  for (let a = 0, s2 = t.e.k, i = t.e.v, u = s2.length; a < u; a++) n2.set(p$1(e, r, s2[a]), p$1(e, r, i[a]));
   return n2;
 }
 function to(e, r) {
@@ -4812,9 +4826,9 @@ function to(e, r) {
 }
 function no(e, r, t) {
   var u;
-  let n2 = Dt(t.c), a = p$1(e, r, t.f), s = (u = t.b) != null ? u : 0;
-  if (s < 0 || s > a.byteLength) throw new h(t);
-  return b(e, t.i, new n2(a, s, t.l));
+  let n2 = Dt(t.c), a = p$1(e, r, t.f), s2 = (u = t.b) != null ? u : 0;
+  if (s2 < 0 || s2 > a.byteLength) throw new h(t);
+  return b(e, t.i, new n2(a, s2, t.l));
 }
 function oo(e, r, t) {
   var i;
@@ -4838,8 +4852,8 @@ function so(e, r, t) {
   return Yt(e, r, t, a);
 }
 function io(e, r, t) {
-  let n2 = re(), a = b(e, t.i, n2.p), s = p$1(e, r, t.f);
-  return t.s ? n2.s(s) : n2.f(s), a;
+  let n2 = re(), a = b(e, t.i, n2.p), s2 = p$1(e, r, t.f);
+  return t.s ? n2.s(s2) : n2.f(s2), a;
 }
 function uo(e, r, t) {
   return b(e, t.i, Object(p$1(e, r, t.f)));
@@ -4848,8 +4862,8 @@ function lo(e, r, t) {
   let n2 = e.base.plugins;
   if (n2) {
     let a = B(t.c);
-    for (let s = 0, i = n2.length; s < i; s++) {
-      let u = n2[s];
+    for (let s2 = 0, i = n2.length; s2 < i; s2++) {
+      let u = n2[s2];
       if (u.tag === a) return b(e, t.i, u.deserialize(t.s, new Dr(e, r), { id: t.i }));
     }
   }
@@ -4879,8 +4893,8 @@ function po(e, r, t) {
   return Tt(n2);
 }
 function go(e, r, t) {
-  let n2 = b(e, t.i, te()), a = t.a, s = a.length;
-  if (s) for (let i = 0; i < s; i++) p$1(e, r, a[i]);
+  let n2 = b(e, t.i, te()), a = t.a, s2 = a.length;
+  if (s2) for (let i = 0; i < s2; i++) p$1(e, r, a[i]);
   return n2;
 }
 function yo(e, r, t) {
@@ -4906,7 +4920,7 @@ function Co(e, r, t) {
 }
 function Ao(e, r, t) {
   let n2 = b(e, t.i, Tr([], t.s, t.l));
-  for (let a = 0, s = t.a.length; a < s; a++) n2.v[a] = p$1(e, r, t.a[a]);
+  for (let a = 0, s2 = t.a.length; a < s2; a++) n2.v[a] = p$1(e, r, t.a[a]);
   return n2;
 }
 function p$1(e, r, t) {
@@ -5024,7 +5038,7 @@ function ye(e) {
 }
 function Po(e) {
   let r = [], t = e[0];
-  for (let n2 = 1, a = e.length, s, i = t; n2 < a; n2++) s = e[n2], s.t === 0 && s.v === i.v ? t = { t: 0, s: s.s, k: o, v: ye(t) } : s.t === 2 && s.s === i.s ? t = { t: 2, s: ye(t), k: s.k, v: s.v } : s.t === 1 && s.s === i.s ? t = { t: 1, s: ye(t), k: o, v: s.v } : s.t === 3 && s.s === i.s ? t = { t: 3, s: ye(t), k: s.k, v: o } : (r.push(t), t = s), i = s;
+  for (let n2 = 1, a = e.length, s2, i = t; n2 < a; n2++) s2 = e[n2], s2.t === 0 && s2.v === i.v ? t = { t: 0, s: s2.s, k: o, v: ye(t) } : s2.t === 2 && s2.s === i.s ? t = { t: 2, s: ye(t), k: s2.k, v: s2.v } : s2.t === 1 && s2.s === i.s ? t = { t: 1, s: ye(t), k: o, v: s2.v } : s2.t === 3 && s2.s === i.s ? t = { t: 3, s: ye(t), k: s2.k, v: o } : (r.push(t), t = s2), i = s2;
   return r.push(t), r;
 }
 function tn(e) {
@@ -5074,8 +5088,8 @@ function jr(e, r, t) {
 function Fo(e) {
   let r = "";
   for (let t = 0, n2 = e.flags, a = n2.length; t < a; t++) {
-    let s = n2[t];
-    r += zo[s.type] + "(" + s.value + "),";
+    let s2 = n2[t];
+    r += zo[s2.type] + "(" + s2.value + "),";
   }
   return r;
 }
@@ -5120,30 +5134,30 @@ function Lo(e, r) {
   let t = r.i, n2 = r.a, a = n2.length;
   if (a > 0) {
     e.base.stack.push(t);
-    let s = $t(e, t, n2[0], 0), i = s === "";
-    for (let u = 1, l; u < a; u++) l = $t(e, t, n2[u], u), s += "," + l, i = l === "";
-    return e.base.stack.pop(), jr(e, r.o, r.i), "[" + s + (i ? ",]" : "]");
+    let s2 = $t(e, t, n2[0], 0), i = s2 === "";
+    for (let u = 1, l; u < a; u++) l = $t(e, t, n2[u], u), s2 += "," + l, i = l === "";
+    return e.base.stack.pop(), jr(e, r.o, r.i), "[" + s2 + (i ? ",]" : "]");
   }
   return "[]";
 }
 function Xt(e, r, t, n2) {
   if (typeof t == "string") {
-    let a = Number(t), s = a >= 0 && a.toString() === t || Vr(t);
+    let a = Number(t), s2 = a >= 0 && a.toString() === t || Vr(t);
     if (D(e.base, n2)) {
       let i = m(e, n2.i);
-      return O(e.base, r.i), s && a !== a ? Ur(e, r.i, t, i) : Ne(e, r.i, s ? t : '"' + t + '"', i), "";
+      return O(e.base, r.i), s2 && a !== a ? Ur(e, r.i, t, i) : Ne(e, r.i, s2 ? t : '"' + t + '"', i), "";
     }
-    return (s ? t : '"' + t + '"') + ":" + f(e, n2);
+    return (s2 ? t : '"' + t + '"') + ":" + f(e, n2);
   }
   return "[" + f(e, t) + "]:" + f(e, n2);
 }
 function an(e, r, t) {
   let n2 = t.k, a = n2.length;
   if (a > 0) {
-    let s = t.v;
+    let s2 = t.v;
     e.base.stack.push(r.i);
-    let i = Xt(e, r, n2[0], s[0]);
-    for (let u = 1, l = i; u < a; u++) l = Xt(e, r, n2[u], s[u]), i += (l && i && ",") + l;
+    let i = Xt(e, r, n2[0], s2[0]);
+    for (let u = 1, l = i; u < a; u++) l = Xt(e, r, n2[u], s2[u]), i += (l && i && ",") + l;
     return e.base.stack.pop(), "{" + i + "}";
   }
   return "{}";
@@ -5156,31 +5170,31 @@ function jo(e, r, t, n2) {
   return a !== "{}" ? "Object.assign(" + n2 + "," + a + ")" : n2;
 }
 function Yo(e, r, t, n2, a) {
-  let s = e.base, i = f(e, a), u = Number(n2), l = u >= 0 && u.toString() === n2 || Vr(n2);
-  if (D(s, a)) l && u !== u ? Ur(e, r.i, n2, i) : Ne(e, r.i, l ? n2 : '"' + n2 + '"', i);
+  let s2 = e.base, i = f(e, a), u = Number(n2), l = u >= 0 && u.toString() === n2 || Vr(n2);
+  if (D(s2, a)) l && u !== u ? Ur(e, r.i, n2, i) : Ne(e, r.i, l ? n2 : '"' + n2 + '"', i);
   else {
-    let g = s.assignments;
-    s.assignments = t, l && u !== u ? Ur(e, r.i, n2, i) : Ne(e, r.i, l ? n2 : '"' + n2 + '"', i), s.assignments = g;
+    let g = s2.assignments;
+    s2.assignments = t, l && u !== u ? Ur(e, r.i, n2, i) : Ne(e, r.i, l ? n2 : '"' + n2 + '"', i), s2.assignments = g;
   }
 }
 function qo(e, r, t, n2, a) {
   if (typeof n2 == "string") Yo(e, r, t, n2, a);
   else {
-    let s = e.base, i = s.stack;
-    s.stack = [];
+    let s2 = e.base, i = s2.stack;
+    s2.stack = [];
     let u = f(e, a);
-    s.stack = i;
-    let l = s.assignments;
-    s.assignments = t, Ne(e, r.i, f(e, n2), u), s.assignments = l;
+    s2.stack = i;
+    let l = s2.assignments;
+    s2.assignments = t, Ne(e, r.i, f(e, n2), u), s2.assignments = l;
   }
 }
 function Wo(e, r, t) {
   let n2 = t.k, a = n2.length;
   if (a > 0) {
-    let s = [], i = t.v;
+    let s2 = [], i = t.v;
     e.base.stack.push(r.i);
-    for (let u = 0; u < a; u++) qo(e, r, s, n2[u], i[u]);
-    return e.base.stack.pop(), tn(s);
+    for (let u = 0; u < a; u++) qo(e, r, s2, n2[u], i[u]);
+    return e.base.stack.pop(), tn(s2);
   }
   return o;
 }
@@ -5211,48 +5225,48 @@ function Qt(e, r, t) {
   return D(n2, t) ? (O(n2, r), Bo(e, r, m(e, t.i)), "") : f(e, t);
 }
 function Jo(e, r) {
-  let t = Oo, n2 = r.a, a = n2.length, s = r.i;
+  let t = Oo, n2 = r.a, a = n2.length, s2 = r.i;
   if (a > 0) {
-    e.base.stack.push(s);
-    let i = Qt(e, s, n2[0]);
-    for (let u = 1, l = i; u < a; u++) l = Qt(e, s, n2[u]), i += (l && i && ",") + l;
+    e.base.stack.push(s2);
+    let i = Qt(e, s2, n2[0]);
+    for (let u = 1, l = i; u < a; u++) l = Qt(e, s2, n2[u]), i += (l && i && ",") + l;
     e.base.stack.pop(), i && (t += "([" + i + "])");
   }
   return t;
 }
 function en(e, r, t, n2, a) {
-  let s = e.base;
-  if (D(s, t)) {
+  let s2 = e.base;
+  if (D(s2, t)) {
     let i = m(e, t.i);
-    if (O(s, r), D(s, n2)) {
+    if (O(s2, r), D(s2, n2)) {
       let l = m(e, n2.i);
       return ge(e, r, i, l), "";
     }
-    if (n2.t !== 4 && n2.i != null && Lr(s, n2.i)) {
+    if (n2.t !== 4 && n2.i != null && Lr(s2, n2.i)) {
       let l = "(" + f(e, n2) + ",[" + a + "," + a + "])";
       return ge(e, r, i, m(e, n2.i)), Zt(e, r, a), l;
     }
-    let u = s.stack;
-    return s.stack = [], ge(e, r, i, f(e, n2)), s.stack = u, "";
+    let u = s2.stack;
+    return s2.stack = [], ge(e, r, i, f(e, n2)), s2.stack = u, "";
   }
-  if (D(s, n2)) {
+  if (D(s2, n2)) {
     let i = m(e, n2.i);
-    if (O(s, r), t.t !== 4 && t.i != null && Lr(s, t.i)) {
+    if (O(s2, r), t.t !== 4 && t.i != null && Lr(s2, t.i)) {
       let l = "(" + f(e, t) + ",[" + a + "," + a + "])";
       return ge(e, r, m(e, t.i), i), Zt(e, r, a), l;
     }
-    let u = s.stack;
-    return s.stack = [], ge(e, r, f(e, t), i), s.stack = u, "";
+    let u = s2.stack;
+    return s2.stack = [], ge(e, r, f(e, t), i), s2.stack = u, "";
   }
   return "[" + f(e, t) + "," + f(e, n2) + "]";
 }
 function Zo(e, r) {
-  let t = To, n2 = r.e.k, a = n2.length, s = r.i, i = r.f, u = m(e, i.i), l = e.base;
+  let t = To, n2 = r.e.k, a = n2.length, s2 = r.i, i = r.f, u = m(e, i.i), l = e.base;
   if (a > 0) {
     let g = r.e.v;
-    l.stack.push(s);
-    let S = en(e, s, n2[0], g[0], u);
-    for (let d = 1, K = S; d < a; d++) K = en(e, s, n2[d], g[d], u), S += (K && S && ",") + K;
+    l.stack.push(s2);
+    let S = en(e, s2, n2[0], g[0], u);
+    for (let d = 1, K = S; d < a; d++) K = en(e, s2, n2[d], g[d], u), S += (K && S && ",") + K;
     l.stack.pop(), S && (t += "([" + S + "])");
   }
   return i.t === 26 && (O(l, i.i), t = "(" + f(e, i) + "," + t + ")"), t;
@@ -5276,14 +5290,14 @@ function ra(e, r) {
   return qr(e, r, "new " + Ce[r.s] + '("' + r.m + '")');
 }
 function ta(e, r) {
-  let t, n2 = r.f, a = r.i, s = r.s ? wo : ho, i = e.base;
+  let t, n2 = r.f, a = r.i, s2 = r.s ? wo : ho, i = e.base;
   if (D(i, n2)) {
     let u = m(e, n2.i);
-    t = s + (r.s ? "().then(" + sr([], u) + ")" : "().catch(" + Wt([], "throw " + u) + ")");
+    t = s2 + (r.s ? "().then(" + sr([], u) + ")" : "().catch(" + Wt([], "throw " + u) + ")");
   } else {
     i.stack.push(a);
     let u = f(e, n2);
-    i.stack.pop(), t = s + "(" + u + ")";
+    i.stack.pop(), t = s2 + "(" + u + ")";
   }
   return t;
 }
@@ -5309,8 +5323,8 @@ function sa(e, r) {
 function ia(e, r) {
   let t = e.base.plugins;
   if (t) for (let n2 = 0, a = t.length; n2 < a; n2++) {
-    let s = t[n2];
-    if (s.tag === r.c) return e.child == null && (e.child = new Mr(e)), s.serialize(r.s, e.child, { id: r.i });
+    let s2 = t[n2];
+    if (s2.tag === r.c) return e.child == null && (e.child = new Mr(e)), s2.serialize(r.s, e.child, { id: r.i });
   }
   throw new Q(r.c);
 }
@@ -5322,10 +5336,10 @@ function la(e, r) {
   return W(e, r.a[0]) + "(" + f(e, r.a[1]) + ")";
 }
 function ca(e, r) {
-  let t = r.a[0], n2 = r.a[1], a = e.base, s = "";
-  t.t !== 4 && (O(a, t.i), s += "(" + f(e, t)), n2.t !== 4 && (O(a, n2.i), s += (s ? "," : "(") + f(e, n2)), s && (s += ",");
+  let t = r.a[0], n2 = r.a[1], a = e.base, s2 = "";
+  t.t !== 4 && (O(a, t.i), s2 += "(" + f(e, t)), n2.t !== 4 && (O(a, n2.i), s2 += (s2 ? "," : "(") + f(e, n2)), s2 && (s2 += ",");
   let i = se(e, r.i, "(" + At + ")(" + m(e, n2.i) + "," + m(e, t.i) + ")");
-  return s ? s + i + ")" : i;
+  return s2 ? s2 + i + ")" : i;
 }
 function fa(e, r) {
   return W(e, r.a[0]) + "(" + f(e, r.a[1]) + ")";
@@ -5334,7 +5348,7 @@ function Sa(e, r) {
   let t = se(e, r.i, W(e, r.f) + "()"), n2 = r.a.length;
   if (n2) {
     let a = f(e, r.a[0]);
-    for (let s = 1; s < n2; s++) a += "," + f(e, r.a[s]);
+    for (let s2 = 1; s2 < n2; s2++) a += "," + f(e, r.a[s2]);
     return "(" + t + "," + a + "," + m(e, r.i) + ")";
   }
   return t;
@@ -5356,9 +5370,9 @@ function ga(e, r) {
   let t = r.a, n2 = t.length, a = r.i;
   if (n2 > 0) {
     e.base.stack.push(a);
-    let s = rn(e, a, 0, t[0]);
-    for (let i = 1, u = s; i < n2; i++) u = rn(e, a, i, t[i]), s += (u && s && ",") + u;
-    if (e.base.stack.pop(), s) return "{__SEROVAL_SEQUENCE__:!0,v:[" + s + "],t:" + r.s + ",d:" + r.l + "}";
+    let s2 = rn(e, a, 0, t[0]);
+    for (let i = 1, u = s2; i < n2; i++) u = rn(e, a, i, t[i]), s2 += (u && s2 && ",") + u;
+    if (e.base.stack.pop(), s2) return "{__SEROVAL_SEQUENCE__:!0,v:[" + s2 + "],t:" + r.s + ",d:" + r.l + "}";
   }
   return "{__SEROVAL_SEQUENCE__:!0,v:[],t:-1,d:0}";
 }
@@ -5448,7 +5462,7 @@ function f(e, r) {
 function cr(e, r) {
   let t = f(e, r), n2 = r.i;
   if (n2 == null) return t;
-  let a = on(e.base), s = m(e, n2), i = e.state.scopeId, u = i == null ? "" : ce, l = a ? "(" + t + "," + a + s + ")" : t;
+  let a = on(e.base), s2 = m(e, n2), i = e.state.scopeId, u = i == null ? "" : ce, l = a ? "(" + t + "," + a + s2 + ")" : t;
   if (u === "") return r.t === 10 && !a ? "(" + l + ")" : l;
   let g = i == null ? "()" : "(" + ce + '["' + y(i) + '"])';
   return "(" + sr([u], l) + ")" + g;
@@ -5496,16 +5510,16 @@ function Hr(e) {
 }
 function ba(e, r, t) {
   let n2 = [];
-  for (let a = 0, s = t.length; a < s; a++) a in t ? n2[a] = E(e, r, t[a]) : n2[a] = 0;
+  for (let a = 0, s2 = t.length; a < s2; a++) a in t ? n2[a] = E(e, r, t[a]) : n2[a] = 0;
   return n2;
 }
 function va(e, r, t, n2) {
   return _e(t, n2, ba(e, r, n2));
 }
 function Jr(e, r, t) {
-  let n2 = Object.entries(t), a = [], s = [];
-  for (let i = 0, u = n2.length; i < u; i++) a.push(y(n2[i][0])), s.push(E(e, r, n2[i][1]));
-  return C in t && (a.push(I(e.base, C)), s.push(Ue(er(e.base), E(e, r, $e(t))))), v in t && (a.push(I(e.base, v)), s.push(je(rr(e.base), E(e, r, e.type === 1 ? te() : Xe(t))))), P$1 in t && (a.push(I(e.base, P$1)), s.push(X(t[P$1]))), R in t && (a.push(I(e.base, R)), s.push(t[R] ? J : Z)), { k: a, v: s };
+  let n2 = Object.entries(t), a = [], s2 = [];
+  for (let i = 0, u = n2.length; i < u; i++) a.push(y(n2[i][0])), s2.push(E(e, r, n2[i][1]));
+  return C in t && (a.push(I(e.base, C)), s2.push(Ue(er(e.base), E(e, r, $e(t))))), v in t && (a.push(I(e.base, v)), s2.push(je(rr(e.base), E(e, r, e.type === 1 ? te() : Xe(t))))), P$1 in t && (a.push(I(e.base, P$1)), s2.push(X(t[P$1]))), R in t && (a.push(I(e.base, R)), s2.push(t[R] ? J : Z)), { k: a, v: s2 };
 }
 function Wr(e, r, t, n2, a) {
   return tr(t, n2, a, Jr(e, r, n2));
@@ -5531,31 +5545,31 @@ function Ra(e, r, t, n2) {
   return Me(t, n2, a ? Jr(e, r, a) : o);
 }
 function Pa(e, r, t, n2) {
-  let a = [], s = [];
-  for (let [i, u] of n2.entries()) a.push(E(e, r, i)), s.push(E(e, r, u));
-  return nr(e.base, t, a, s);
+  let a = [], s2 = [];
+  for (let [i, u] of n2.entries()) a.push(E(e, r, i)), s2.push(E(e, r, u));
+  return nr(e.base, t, a, s2);
 }
 function xa(e, r, t, n2) {
   let a = [];
-  for (let s of n2.keys()) a.push(E(e, r, s));
+  for (let s2 of n2.keys()) a.push(E(e, r, s2));
   return Le(t, a);
 }
 function Oa(e, r, t, n2) {
   let a = Ye(t, k(e.base, 4), []);
-  return e.type === 1 || (Xr(e), n2.on({ next: (s) => {
+  return e.type === 1 || (Xr(e), n2.on({ next: (s2) => {
     if (e.state.alive) {
-      let i = G(e, r, s);
+      let i = G(e, r, s2);
       i && ie(e, qe(t, i));
     }
-  }, throw: (s) => {
+  }, throw: (s2) => {
     if (e.state.alive) {
-      let i = G(e, r, s);
+      let i = G(e, r, s2);
       i && ie(e, We(t, i));
     }
     be(e);
-  }, return: (s) => {
+  }, return: (s2) => {
     if (e.state.alive) {
-      let i = G(e, r, s);
+      let i = G(e, r, s2);
       i && ie(e, Ge(t, i));
     }
     be(e);
@@ -5579,15 +5593,15 @@ function ha(e, r, t, n2) {
   return e.type === 2 && (Xr(e), n2.then(Ta.bind(e, a, r), wa.bind(e, a, r))), ht(e.base, t, a);
 }
 function za(e, r, t, n2, a) {
-  for (let s = 0, i = a.length; s < i; s++) {
-    let u = a[s];
+  for (let s2 = 0, i = a.length; s2 < i; s2++) {
+    let u = a[s2];
     if (u.parse.sync && u.test(n2)) return fe(t, u.tag, u.parse.sync(n2, new Gr(e, r), { id: t }));
   }
   return o;
 }
 function _a(e, r, t, n2, a) {
-  for (let s = 0, i = a.length; s < i; s++) {
-    let u = a[s];
+  for (let s2 = 0, i = a.length; s2 < i; s2++) {
+    let u = a[s2];
     if (u.parse.stream && u.test(n2)) return fe(t, u.tag, u.parse.stream(n2, new Kr(e, r), { id: t }));
   }
   return o;
@@ -5598,7 +5612,7 @@ function un(e, r, t, n2) {
 }
 function ka(e, r, t, n2) {
   let a = [];
-  for (let s = 0, i = n2.v.length; s < i; s++) a[s] = E(e, r, n2.v[s]);
+  for (let s2 = 0, i = n2.v.length; s2 < i; s2++) a[s2] = E(e, r, n2.v[s2]);
   return Ke(t, a, n2.t, n2.d);
 }
 function Da(e, r, t, n2, a) {
@@ -5642,14 +5656,14 @@ function Da(e, r, t, n2, a) {
       return xa(e, r, t, n2);
   }
   if (a === Promise || n2 instanceof Promise) return ha(e, r, t, n2);
-  let s = e.base.features;
-  if (s & 32 && a === RegExp) return ze(t, n2);
-  if (s & 16) switch (a) {
+  let s2 = e.base.features;
+  if (s2 & 32 && a === RegExp) return ze(t, n2);
+  if (s2 & 16) switch (a) {
     case BigInt64Array:
     case BigUint64Array:
       return Ea(e, r, t, n2);
   }
-  if (s & 1 && typeof AggregateError != "undefined" && (a === AggregateError || n2 instanceof AggregateError)) return Ra(e, r, t, n2);
+  if (s2 & 1 && typeof AggregateError != "undefined" && (a === AggregateError || n2 instanceof AggregateError)) return Ra(e, r, t, n2);
   if (n2 instanceof Error) return sn(e, r, t, n2);
   if (C in n2 || v in n2) return Wr(e, r, t, n2, !!a);
   throw new x$1(n2);
@@ -5660,8 +5674,8 @@ function Fa(e, r, t, n2) {
   if (Ze(n2)) return ka(e, r, t, n2);
   let a = n2.constructor;
   if (a === Y) return E(e, r, n2.replacement);
-  let s = un(e, r, t, n2);
-  return s || Da(e, r, t, n2, a);
+  let s2 = un(e, r, t, n2);
+  return s2 || Da(e, r, t, n2, a);
 }
 function Ba(e, r, t) {
   let n2 = q(e.base, t);
@@ -5743,7 +5757,7 @@ async function ou(e, r = {}) {
   return await oe(n2, e);
 }
 function cn(e, r) {
-  let t = A(r.plugins), n2 = Hr({ plugins: t, refs: r.refs, disabledFeatures: r.disabledFeatures, onParse(a, s) {
+  let t = A(r.plugins), n2 = Hr({ plugins: t, refs: r.refs, disabledFeatures: r.disabledFeatures, onParse(a, s2) {
     let i = ur({ plugins: t, features: n2.base.features, scopeId: r.scopeId, markedRefs: n2.base.marked }), u;
     try {
       u = cr(i, a);
@@ -5751,7 +5765,7 @@ function cn(e, r) {
       r.onError && r.onError(l);
       return;
     }
-    r.onSerialize(u, s);
+    r.onSerialize(u, s2);
   }, onError: r.onError, onDone: r.onDone });
   return Qr(n2, e), fr.bind(null, n2);
 }
@@ -5761,8 +5775,8 @@ function au(e, r) {
 }
 function Iu(e, r = {}) {
   var i;
-  let t = A(r.plugins), n2 = r.disabledFeatures || 0, a = (i = e.f) != null ? i : 63, s = Mt({ plugins: t, markedRefs: e.m, features: a & ~n2, disabledFeatures: n2 });
-  return ar(s, e.t);
+  let t = A(r.plugins), n2 = r.disabledFeatures || 0, a = (i = e.f) != null ? i : 63, s2 = Mt({ plugins: t, markedRefs: e.m, features: a & ~n2, disabledFeatures: n2 });
+  return ar(s2, e.t);
 }
 const GLOBAL_TSR = "$_TSR";
 const TSR_SCRIPT_BARRIER_ID = "$tsr-stream-barrier";
@@ -5839,10 +5853,10 @@ function w2(e) {
   let r = te(), a = e.getReader();
   async function t() {
     try {
-      let s = await a.read();
-      s.done ? r.return(s.value) : (r.next(s.value), await t());
-    } catch (s) {
-      r.throw(s);
+      let s2 = await a.read();
+      s2.done ? r.return(s2.value) : (r.next(s2.value), await t());
+    } catch (s2) {
+      r.throw(s2);
     }
   }
   return t().catch(() => {
@@ -6589,10 +6603,10 @@ function requireReact() {
   return react.exports;
 }
 var reactExports = requireReact();
-const React__default = /* @__PURE__ */ getDefaultExportFromCjs(reactExports);
+const s = /* @__PURE__ */ getDefaultExportFromCjs(reactExports);
 const React = /* @__PURE__ */ _mergeNamespaces$1({
   __proto__: null,
-  default: React__default
+  default: s
 }, [reactExports]);
 function CatchBoundary(props) {
   const errorComponent = props.errorComponent ?? ErrorComponent;
@@ -6685,10 +6699,10 @@ function ErrorComponent({ error }) {
   ] });
 }
 function ClientOnly({ children, fallback = null }) {
-  return useHydrated() ? /* @__PURE__ */ jsxRuntimeExports.jsx(React__default.Fragment, { children }) : /* @__PURE__ */ jsxRuntimeExports.jsx(React__default.Fragment, { children: fallback });
+  return useHydrated() ? /* @__PURE__ */ jsxRuntimeExports.jsx(s.Fragment, { children }) : /* @__PURE__ */ jsxRuntimeExports.jsx(s.Fragment, { children: fallback });
 }
 function useHydrated() {
-  return React__default.useSyncExternalStore(
+  return s.useSyncExternalStore(
     subscribe,
     () => true,
     () => false
@@ -6903,7 +6917,7 @@ function requireReactDom() {
 }
 function CatchNotFound(props) {
   const resetKey = useRouterState({
-    select: (s) => `not-found-${s.location.pathname}-${s.status}`
+    select: (s2) => `not-found-${s2.location.pathname}-${s2.status}`
   });
   return /* @__PURE__ */ jsxRuntimeExports.jsx(
     CatchBoundary,
@@ -6989,9 +7003,9 @@ const Match = reactExports.memo(function MatchImpl({
 }) {
   const router = useRouter();
   const matchState = useRouterState({
-    select: (s) => {
-      const matchIndex = s.matches.findIndex((d) => d.id === matchId);
-      const match = s.matches[matchIndex];
+    select: (s2) => {
+      const matchIndex = s2.matches.findIndex((d) => d.id === matchId);
+      const match = s2.matches[matchIndex];
       invariant(
         match
       );
@@ -6999,8 +7013,8 @@ const Match = reactExports.memo(function MatchImpl({
         routeId: match.routeId,
         ssr: match.ssr,
         _displayPending: match._displayPending,
-        resetKey: s.loadedAt,
-        parentRouteId: s.matches[matchIndex - 1]?.routeId
+        resetKey: s2.loadedAt,
+        parentRouteId: s2.matches[matchIndex - 1]?.routeId
       };
     },
     structuralSharing: true
@@ -7078,8 +7092,8 @@ const MatchInner = reactExports.memo(function MatchInnerImpl({
 }) {
   const router = useRouter();
   const { match, key, routeId } = useRouterState({
-    select: (s) => {
-      const match2 = s.matches.find((d) => d.id === matchId);
+    select: (s2) => {
+      const match2 = s2.matches.find((d) => d.id === matchId);
       const routeId2 = match2.routeId;
       const remountFn = router.routesById[routeId2].options.remountDeps ?? router.options.defaultRemountDeps;
       const remountDeps = remountFn?.({
@@ -7155,12 +7169,12 @@ const Outlet = reactExports.memo(function OutletImpl() {
   const router = useRouter();
   const matchId = reactExports.useContext(matchContext);
   const routeId = useRouterState({
-    select: (s) => s.matches.find((d) => d.id === matchId)?.routeId
+    select: (s2) => s2.matches.find((d) => d.id === matchId)?.routeId
   });
   const route = router.routesById[routeId];
   const parentGlobalNotFound = useRouterState({
-    select: (s) => {
-      const matches = s.matches;
+    select: (s2) => {
+      const matches = s2.matches;
       const parentMatch = matches.find((d) => d.id === matchId);
       invariant(
         parentMatch
@@ -7169,8 +7183,8 @@ const Outlet = reactExports.memo(function OutletImpl() {
     }
   });
   const childMatchId = useRouterState({
-    select: (s) => {
-      const matches = s.matches;
+    select: (s2) => {
+      const matches = s2.matches;
       const index = matches.findIndex((d) => d.id === matchId);
       return matches[index + 1]?.id;
     }
@@ -7203,12 +7217,12 @@ function Matches() {
 function MatchesInner() {
   const router = useRouter();
   const matchId = useRouterState({
-    select: (s) => {
-      return s.matches[0]?.id;
+    select: (s2) => {
+      return s2.matches[0]?.id;
     }
   });
   const resetKey = useRouterState({
-    select: (s) => s.loadedAt
+    select: (s2) => s2.loadedAt
   });
   const matchComponent = matchId ? /* @__PURE__ */ jsxRuntimeExports.jsx(Match, { matchId }) : null;
   return /* @__PURE__ */ jsxRuntimeExports.jsx(matchContext.Provider, { value: matchId, children: router.options.disableGlobalCatchBoundary ? matchComponent : /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -8164,8 +8178,8 @@ function requireReactDomServerLegacy_node_production() {
     M: preinitModuleScript
   };
   var PRELOAD_NO_CREDS = [], currentlyFlushingRenderState = null, scriptRegex = /(<\/|<)(s)(cript)/gi;
-  function scriptReplacer(match, prefix3, s, suffix2) {
-    return "" + prefix3 + ("s" === s ? "\\u0073" : "\\u0053") + suffix2;
+  function scriptReplacer(match, prefix3, s2, suffix2) {
+    return "" + prefix3 + ("s" === s2 ? "\\u0073" : "\\u0053") + suffix2;
   }
   function createResumableState(identifierPrefix, externalRuntimeConfig, bootstrapScriptContent, bootstrapScripts, bootstrapModules) {
     return {
@@ -8543,8 +8557,8 @@ function requireReactDomServerLegacy_node_production() {
     return null;
   }
   var styleRegex = /(<\/|<)(s)(tyle)/gi;
-  function styleReplacer(match, prefix3, s, suffix2) {
-    return "" + prefix3 + ("s" === s ? "\\73 " : "\\53 ") + suffix2;
+  function styleReplacer(match, prefix3, s2, suffix2) {
+    return "" + prefix3 + ("s" === s2 ? "\\73 " : "\\53 ") + suffix2;
   }
   function pushSelfClosing(target, props, tag) {
     target.push(startChunkForTag(tag));
@@ -12853,7 +12867,7 @@ var hasRequiredReactDomServer_node_production;
 function requireReactDomServer_node_production() {
   if (hasRequiredReactDomServer_node_production) return reactDomServer_node_production;
   hasRequiredReactDomServer_node_production = 1;
-  var util = require$$0$4, crypto = require$$1$4, async_hooks = require$$2, React2 = requireReact(), ReactDOM = requireReactDom(), stream = require$$1$6, REACT_ELEMENT_TYPE = /* @__PURE__ */ Symbol.for("react.transitional.element"), REACT_PORTAL_TYPE = /* @__PURE__ */ Symbol.for("react.portal"), REACT_FRAGMENT_TYPE = /* @__PURE__ */ Symbol.for("react.fragment"), REACT_STRICT_MODE_TYPE = /* @__PURE__ */ Symbol.for("react.strict_mode"), REACT_PROFILER_TYPE = /* @__PURE__ */ Symbol.for("react.profiler"), REACT_CONSUMER_TYPE = /* @__PURE__ */ Symbol.for("react.consumer"), REACT_CONTEXT_TYPE = /* @__PURE__ */ Symbol.for("react.context"), REACT_FORWARD_REF_TYPE = /* @__PURE__ */ Symbol.for("react.forward_ref"), REACT_SUSPENSE_TYPE = /* @__PURE__ */ Symbol.for("react.suspense"), REACT_SUSPENSE_LIST_TYPE = /* @__PURE__ */ Symbol.for("react.suspense_list"), REACT_MEMO_TYPE = /* @__PURE__ */ Symbol.for("react.memo"), REACT_LAZY_TYPE = /* @__PURE__ */ Symbol.for("react.lazy"), REACT_SCOPE_TYPE = /* @__PURE__ */ Symbol.for("react.scope"), REACT_ACTIVITY_TYPE = /* @__PURE__ */ Symbol.for("react.activity"), REACT_LEGACY_HIDDEN_TYPE = /* @__PURE__ */ Symbol.for("react.legacy_hidden"), REACT_MEMO_CACHE_SENTINEL = /* @__PURE__ */ Symbol.for("react.memo_cache_sentinel"), REACT_VIEW_TRANSITION_TYPE = /* @__PURE__ */ Symbol.for("react.view_transition"), MAYBE_ITERATOR_SYMBOL = Symbol.iterator;
+  var util = require$$2$3, crypto = require$$1$4, async_hooks = require$$2$1, React2 = requireReact(), ReactDOM = requireReactDom(), stream = require$$1$6, REACT_ELEMENT_TYPE = /* @__PURE__ */ Symbol.for("react.transitional.element"), REACT_PORTAL_TYPE = /* @__PURE__ */ Symbol.for("react.portal"), REACT_FRAGMENT_TYPE = /* @__PURE__ */ Symbol.for("react.fragment"), REACT_STRICT_MODE_TYPE = /* @__PURE__ */ Symbol.for("react.strict_mode"), REACT_PROFILER_TYPE = /* @__PURE__ */ Symbol.for("react.profiler"), REACT_CONSUMER_TYPE = /* @__PURE__ */ Symbol.for("react.consumer"), REACT_CONTEXT_TYPE = /* @__PURE__ */ Symbol.for("react.context"), REACT_FORWARD_REF_TYPE = /* @__PURE__ */ Symbol.for("react.forward_ref"), REACT_SUSPENSE_TYPE = /* @__PURE__ */ Symbol.for("react.suspense"), REACT_SUSPENSE_LIST_TYPE = /* @__PURE__ */ Symbol.for("react.suspense_list"), REACT_MEMO_TYPE = /* @__PURE__ */ Symbol.for("react.memo"), REACT_LAZY_TYPE = /* @__PURE__ */ Symbol.for("react.lazy"), REACT_SCOPE_TYPE = /* @__PURE__ */ Symbol.for("react.scope"), REACT_ACTIVITY_TYPE = /* @__PURE__ */ Symbol.for("react.activity"), REACT_LEGACY_HIDDEN_TYPE = /* @__PURE__ */ Symbol.for("react.legacy_hidden"), REACT_MEMO_CACHE_SENTINEL = /* @__PURE__ */ Symbol.for("react.memo_cache_sentinel"), REACT_VIEW_TRANSITION_TYPE = /* @__PURE__ */ Symbol.for("react.view_transition"), MAYBE_ITERATOR_SYMBOL = Symbol.iterator;
   function getIteratorFn(maybeIterable) {
     if (null === maybeIterable || "object" !== typeof maybeIterable) return null;
     maybeIterable = MAYBE_ITERATOR_SYMBOL && maybeIterable[MAYBE_ITERATOR_SYMBOL] || maybeIterable["@@iterator"];
@@ -13069,8 +13083,8 @@ function requireReactDomServer_node_production() {
   var PRELOAD_NO_CREDS = [], currentlyFlushingRenderState = null;
   stringToPrecomputedChunk('"></template>');
   var startInlineScript = stringToPrecomputedChunk("<script"), endInlineScript = stringToPrecomputedChunk("<\/script>"), startScriptSrc = stringToPrecomputedChunk('<script src="'), startModuleSrc = stringToPrecomputedChunk('<script type="module" src="'), scriptNonce = stringToPrecomputedChunk(' nonce="'), scriptIntegirty = stringToPrecomputedChunk(' integrity="'), scriptCrossOrigin = stringToPrecomputedChunk(' crossorigin="'), endAsyncScript = stringToPrecomputedChunk(' async=""><\/script>'), startInlineStyle = stringToPrecomputedChunk("<style"), scriptRegex = /(<\/|<)(s)(cript)/gi;
-  function scriptReplacer(match, prefix3, s, suffix2) {
-    return "" + prefix3 + ("s" === s ? "\\u0073" : "\\u0053") + suffix2;
+  function scriptReplacer(match, prefix3, s2, suffix2) {
+    return "" + prefix3 + ("s" === s2 ? "\\u0073" : "\\u0053") + suffix2;
   }
   var importMapScriptStart = stringToPrecomputedChunk(
     '<script type="importmap">'
@@ -13648,8 +13662,8 @@ function requireReactDomServer_node_production() {
     return null;
   }
   var styleRegex = /(<\/|<)(s)(tyle)/gi;
-  function styleReplacer(match, prefix3, s, suffix2) {
-    return "" + prefix3 + ("s" === s ? "\\73 " : "\\53 ") + suffix2;
+  function styleReplacer(match, prefix3, s2, suffix2) {
+    return "" + prefix3 + ("s" === s2 ? "\\73 " : "\\53 ") + suffix2;
   }
   function pushSelfClosing(target, props, tag) {
     target.push(startChunkForTag(tag));
@@ -18551,18 +18565,18 @@ var hasRequiredServer_node;
 function requireServer_node() {
   if (hasRequiredServer_node) return server_node;
   hasRequiredServer_node = 1;
-  var l, s;
+  var l, s2;
   {
     l = requireReactDomServerLegacy_node_production();
-    s = requireReactDomServer_node_production();
+    s2 = requireReactDomServer_node_production();
   }
   server_node.version = l.version;
   server_node.renderToString = l.renderToString;
   server_node.renderToStaticMarkup = l.renderToStaticMarkup;
-  server_node.renderToPipeableStream = s.renderToPipeableStream;
-  server_node.renderToReadableStream = s.renderToReadableStream;
-  server_node.resumeToPipeableStream = s.resumeToPipeableStream;
-  server_node.resume = s.resume;
+  server_node.renderToPipeableStream = s2.renderToPipeableStream;
+  server_node.renderToReadableStream = s2.renderToReadableStream;
+  server_node.resumeToPipeableStream = s2.resumeToPipeableStream;
+  server_node.resume = s2.resume;
   return server_node;
 }
 var server_nodeExports = requireServer_node();
@@ -19329,7 +19343,7 @@ function getResponse() {
   return event.res;
 }
 async function getStartManifest(matchedRoutes) {
-  const { tsrStartManifest } = await import("./_tanstack-start-manifest_v-BzWXjz87.mjs");
+  const { tsrStartManifest } = await import("./_tanstack-start-manifest_v-Dicykr-J.mjs");
   const startManifest = tsrStartManifest();
   const rootRoute = startManifest.routes[rootRouteId] = startManifest.routes[rootRouteId] || {};
   rootRoute.assets = rootRoute.assets || [];
@@ -19898,7 +19912,7 @@ let entriesPromise;
 let baseManifestPromise;
 let cachedFinalManifestPromise;
 async function loadEntries() {
-  const routerEntry = await import("./router-DutFq3Ie.mjs").then((n2) => n2.r);
+  const routerEntry = await import("./router-B_zlQCx7.mjs").then((n2) => n2.r);
   const startEntry = await import("./start-HYkvq4Ni.mjs");
   return { startEntry, routerEntry };
 }
@@ -20310,34 +20324,35 @@ function createServerEntry(entry) {
 }
 const server = createServerEntry({ fetch: fetch$1 });
 export {
+  commonjsGlobal as A,
   Outlet as O,
   React as R,
-  getAugmentedNamespace as a,
-  rootRouteId as b,
-  joinPaths as c,
+  trimPathRight as a,
+  redirect as b,
+  reactExports as c,
   createServerEntry,
-  trimPathRight as d,
+  dummyMatchContext as d,
   server as default,
-  redirect as e,
-  dummyMatchContext as f,
-  getDefaultExportFromCjs as g,
-  useRouter as h,
+  useRouter as e,
+  requireReactDom as f,
+  isDangerousProtocol as g,
+  exactPathTest as h,
   invariant as i,
-  jsxRuntimeExports as j,
-  requireReactDom as k,
-  isDangerousProtocol as l,
+  joinPaths as j,
+  removeTrailingSlash as k,
+  deepEqual as l,
   matchContext as m,
-  exactPathTest as n,
-  removeTrailingSlash as o,
-  deepEqual as p,
-  functionalUpdate as q,
-  reactExports as r,
-  React__default as s,
+  functionalUpdate as n,
+  jsxRuntimeExports as o,
+  isModuleNotFoundError as p,
+  RouterCore as q,
+  rootRouteId as r,
+  s,
   trimPathLeft as t,
   useRouterState as u,
-  isModuleNotFoundError as v,
+  useHydrated as v,
   warning as w,
-  RouterCore as x,
-  useHydrated as y,
-  escapeHtml as z
+  escapeHtml as x,
+  getDefaultExportFromCjs as y,
+  getAugmentedNamespace as z
 };

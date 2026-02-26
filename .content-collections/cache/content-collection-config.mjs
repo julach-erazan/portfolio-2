@@ -12,7 +12,8 @@ var jobs = defineCollection({
     endDate: z.string().optional(),
     company: z.string(),
     location: z.string(),
-    tags: z.array(z.string())
+    tags: z.array(z.string()),
+    content: z.string()
   })
 });
 var education = defineCollection({
@@ -24,7 +25,8 @@ var education = defineCollection({
     summary: z.string(),
     startDate: z.string(),
     endDate: z.string().optional(),
-    tags: z.array(z.string())
+    tags: z.array(z.string()),
+    content: z.string()
   })
 });
 var content_collections_config_default = defineConfig({
