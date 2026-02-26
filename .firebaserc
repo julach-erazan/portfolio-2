@@ -1,5 +1,8 @@
 {
   "projects": {
-    "default": "julach-earzan"
-  }
+    "default": "julach-earzan-318da",
+    "portfolio": "julach-earzan-318da"
+  },
+  "targets": {},
+  "etags": {}
 }
