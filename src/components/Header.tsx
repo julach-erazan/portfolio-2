@@ -4,8 +4,8 @@ import { Menu, X } from 'lucide-react'
 
 const NAV_LINKS = [
   { href: '#about', label: 'About' },
-  { href: '#experience', label: 'Experience' },
   { href: '#projects', label: 'Projects' },
+  { href: '#experience', label: 'Experience' },
   { href: 'mailto:jesrilanka@gmail.com', label: 'Contact' },
 ]
 
@@ -22,10 +22,15 @@ export default function Header() {
     <nav className="fixed top-6 left-1/2 -translate-x-1/2 z-[100] w-auto">
       <div className="glass-nav rounded-full px-8 py-3 flex items-center gap-10 shadow-2xl">
         <Link to="/" className="flex items-center gap-2 group">
-          <div className="w-6 h-6 rounded-lg bg-linear-to-br from-primary to-secondary rotate-45 group-hover:rotate-180 transition-transform duration-700" />
-          <span className="font-bold tracking-tighter text-lg bg-clip-text text-transparent bg-linear-to-b from-white to-white/40">
-            JE.
-          </span>
+          <div className="w-6 h-6 rounded-lg border border-white rotate-45 group-hover:rotate-180 transition-transform duration-700">
+            <img
+              src="JEIcon.webp"
+              alt="JE"
+              loading="lazy"
+              width={24}
+              height={24}
+            />
+          </div>
         </Link>
 
         <div className="hidden md:flex items-center gap-8 text-[13px] font-medium tracking-wide">
@@ -78,7 +83,7 @@ export default function Header() {
               }}
               className="px-6 py-2.5 bg-primary text-white text-[13px] font-bold rounded-full hover:scale-105 transition-all shadow-[0_0_20px_rgba(55,147,255,0.3)] cursor-pointer"
             >
-              Hire Me
+              Chat Me
             </button>
           </div>
         </div>
