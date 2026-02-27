@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
-const FILE_NAME = 'Julach_Earzan_Software-Engineer.pdf'
+const FILE_NAME = 'Julach_Earzan_Software_Engineer.pdf'
 
 export const Route = createFileRoute('/api/download-cv')({
   server: {
