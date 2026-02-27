@@ -134,8 +134,9 @@ function App() {
                     Explore Work
                   </a>
                   <a
-                    href="/Julach_Earzan_Software_Engineer.pdf"
-                    download="Julach_Earzan_Software_Engineer.pdf"
+                    href="/api/download-cv"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="px-5 py-2.5 sm:px-6 sm:py-3 md:px-8 md:py-3 border border-white/30 text-white text-sm sm:text-base font-semibold rounded-full hover:scale-105 hover:bg-white/10 transition-all text-center inline-flex items-center gap-2"
                   >
                     <FileDown className="w-4 h-4 sm:w-5 sm:h-5" />

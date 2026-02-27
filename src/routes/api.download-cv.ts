@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
-const FILE_NAME = 'Julach_Earzan_Software_Engineer.pdf'
+const FILE_NAME = 'Julach_Earzan-Software_Engineer.pdf'
 
 export const Route = createFileRoute('/api/download-cv')({
   server: {
@@ -25,15 +25,16 @@ export const Route = createFileRoute('/api/download-cv')({
           }
           if (!fileBuffer) throw new Error('CV file not found')
 
-          return new Response(fileBuffer, {
+          return new Response(new Uint8Array(fileBuffer), {
             headers: {
               'Content-Type': 'application/pdf',
-              'Content-Disposition': `attachment; filename="${FILE_NAME}"`,
+              'Content-Disposition': `inline; filename="${FILE_NAME}"`,
             },
           })
         } catch (err) {
           console.error('CV download error:', err)
-          return new Response('File not found', { status: 404 })
+          // Fallback: redirect to static asset (e.g. on Vercel where public is served at root)
+          return new Response(null, { status: 302, headers: { Location: `/${FILE_NAME}` } })
         }
       },
     },
